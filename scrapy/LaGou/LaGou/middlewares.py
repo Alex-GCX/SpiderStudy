@@ -62,8 +62,6 @@ class LagouDownloaderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
-    def __init__(self):
-        self.user_agent = UserAgent()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -82,7 +80,7 @@ class LagouDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        request.headers['User-Agent'] = self.user_agent.random
+        return None
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
@@ -105,3 +103,15 @@ class LagouDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class RandomUserAgentDM:
+    """
+    随机获取userAgent
+    """
+    def __init__(self):
+        self.user_agent = UserAgent()
+
+    def process_request(self, request, spider):
+        request.headers['User-Agent'] = self.user_agent.random
+

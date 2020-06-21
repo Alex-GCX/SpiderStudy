@@ -27,6 +27,11 @@ class LagouSpider(scrapy.Spider):
             f.truncate()
 
     def parse(self, response):
+        """
+        解析起始页
+        """
+        # response为GET请求的起始页, 自动获取cookie
+        # 提交POST带上前面返回的cookies, 访问数据结果第一页
         yield scrapy.FormRequest(
             'https://www.lagou.com/jobs/positionAjax.json?needAddtionalResult=false',
             callback=self.parse_list,
@@ -37,23 +42,28 @@ class LagouSpider(scrapy.Spider):
             headers=self.headers
         )
     def parse_list(self, response):
-        # 获取返回的json
+        """
+        解析结果列表页的json数据
+        """
+        # 获取返回的json,转为字典
         res_dict = json.loads(response.text)
-        # 获取数据
+        # 判断返回是否成功
         if not res_dict.get('success'):
             print(res_dict.get('msg', '返回异常'))
         else:
             # 获取当前页数
             page_num = res_dict['content']['pageNo']
-            print(page_num)
+            print('正在爬取第{}页'.format(page_num))
             # 获取sid
             if not self.sid:
                 self.sid = res_dict['content']['showId']
             # 获取响应中的职位url字典
             part_url_dict = res_dict['content']['hrInfoMap']
-            # 遍历职位字典,拼接完整职位url
+            # 遍历职位字典
             for key in part_url_dict:
+                # 初始化保存职位的item
                 item = LagouItem()
+                # 拼接完整职位url
                 item['job_url'] = self.job_url_temp.format(key, self.sid)
                 # 请求职位详情页
                 yield scrapy.Request(
@@ -65,7 +75,7 @@ class LagouSpider(scrapy.Spider):
 
             # 获取下一页
             if page_num < 30:
-                time.sleep(2)
+                # time.sleep(2)
                 yield scrapy.FormRequest(
                     'https://www.lagou.com/jobs/positionAjax.json?needAddtionalResult=false',
                     callback=self.parse_list,
@@ -78,6 +88,9 @@ class LagouSpider(scrapy.Spider):
                 )
 
     def parse_detail(self, response):
+        """
+        解析职位详情页
+        """
         # 接收item
         item = response.meta['item']
         # 解析数据
